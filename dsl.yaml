@@ -1,0 +1,155 @@
+# Real-Time Orchestration Definition Language (RTOD)
+# Version: 1.0
+
+orchestration:
+  name: "satellite_mission_control"
+  version: "2.1.0"
+  description: "Real-time task orchestration for satellite OBC"
+  
+  # Global execution environment constraints
+  environment:
+    time_horizon:
+      start: 0        # Time units (ms, us, or cycles)
+      end: 1000      
+    resources:
+      cpu_cores: 4
+      memory_max: 8192  # MB
+      bandwidth_max: 100 # Mbps
+    real_time:
+      kernel: "PREEMPT_RT"
+      tick_resolution: "us"  # microseconds
+      rt_period: 1000000     # sched_rt_period_us
+      rt_runtime: 950000     # sched_rt_runtime_us
+
+# Service definitions with container specifications
+services:
+  - id: telemetry_service
+    name: "Telemetry Handler"
+    container:
+      image: "registry.sat/telemetry:v2.3"
+      runtime: "docker"
+      isolation: "process"
+      resources:
+        cpu_shares: 1024
+        memory_limit: 512  # MB
+        cpu_affinity: [0, 1]  # Pin to specific cores
+    capabilities:
+      - "COMM_DOWNLINK"
+      - "DATA_COMPRESSION"
+    health_check:
+      interval: 100  # ms
+      timeout: 50
+      retries: 3
+
+  - id: payload_service
+    name: "Payload Controller"
+    container:
+      image: "registry.sat/payload:v1.1"
+      runtime: "docker"
+      isolation: "process"
+      resources:
+        cpu_shares: 2048
+        memory_limit: 1024
+        cpu_affinity: [2, 3]
+
+# Task definitions with real-time properties
+tasks:
+  - id: task_init_comm
+    name: "Initialize Communication"
+    service: telemetry_service
+    real_time:
+      policy: "SCHED_FIFO"    # SCHED_FIFO, SCHED_RR, SCHED_OTHER
+      priority: 99            # 1-99 for RT tasks
+      deadline: 50            # Absolute deadline in time units
+      period: null           # For periodic tasks
+    execution:
+      duration: 30           # WCET (Worst Case Execution Time)
+      resource_usage:
+        cpu: 2              # Resource units
+        memory: 256         # MB
+        bandwidth: 10       # Mbps
+    constraints:
+      max_concurrent: 1      # Max concurrent executions
+      repetitions: 1         # Number of repetitions (0 = infinite)
+      repetition_delay: 0    # Min delay between repetitions
+    
+  - id: task_collect_data
+    name: "Collect Sensor Data"
+    service: payload_service
+    real_time:
+      policy: "SCHED_RR"
+      priority: 95
+      deadline: 100
+      period: 200           # Periodic task
+      timeslice: 10         # For SCHED_RR
+    execution:
+      duration: 45
+      resource_usage:
+        cpu: 1
+        memory: 128
+        bandwidth: 5
+    constraints:
+      max_concurrent: 3
+      repetitions: 5
+      repetition_delay: 50
+    
+  - id: task_process_data
+    name: "Process Telemetry"
+    service: telemetry_service
+    real_time:
+      policy: "SCHED_FIFO"
+      priority: 90
+      deadline: 150
+      period: null
+    execution:
+      duration: 60
+      resource_usage:
+        cpu: 3
+        memory: 512
+        bandwidth: 20
+    constraints:
+      max_concurrent: 2
+      repetitions: 3
+      repetition_delay: 100
+    input_ports:
+      - name: "sensor_data"
+        type: "memcached"
+        key: "telemetry/raw"
+    output_ports:
+      - name: "processed_data"
+        type: "memcached"
+        key: "telemetry/processed"
+
+# Dependencies and precedence constraints
+dependencies:
+  precedence:
+    - from: task_init_comm
+      to: task_collect_data
+      type: "starts"        # starts, meets, overlaps, before
+      delay: 10             # Time units delay
+      wait_all: false       # Wait for all repetitions
+      
+    - from: task_collect_data
+      to: task_process_data
+      type: "meets"         # Immediately after
+      delay: 0
+      wait_all: true        # Wait for all repetitions of 'from' task
+      
+  
+# Fault tolerance configuration
+fault_tolerance:
+  recovery:
+    task_failure:
+      policy: "restart"     # restart, skip, failover
+      max_retries: 3
+      backoff: "exponential"
+    service_failure:
+      policy: "replace"
+      timeout: 1000
+    system_failure:
+      policy: "reboot"
+      checkpoint_interval: 5000
+  redundancy:
+    critical_tasks: [task_init_comm]
+    strategy: "active"     # active, passive
+    replicas: 2

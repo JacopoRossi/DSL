@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSL Definition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding: 10px;
+        }
+
+        .progress-step::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #dee2e6;
+            z-index: 0;
+        }
+
+        .progress-step:first-child::before {
+            left: 50%;
+        }
+
+        .progress-step:last-child::before {
+            right: 50%;
+        }
+
+        .progress-step-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #dee2e6;
+            color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .progress-step.active .progress-step-circle {
+            background: #667eea;
+            color: white;
+        }
+
+        .progress-step.completed .progress-step-circle {
+            background: #28a745;
+            color: white;
+        }
+
+        .progress-step-label {
+            font-size: 12px;
+            margin-top: 8px;
+            color: #6c757d;
+        }
+
+        .progress-step.active .progress-step-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .wizard-content {
+            padding: 40px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .dynamic-list {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dynamic-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .add-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .add-btn:hover {
+            background: #218838;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 DSL Microservices</h1>
+            <p>Create your configuration step by step</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-step active" data-step="1">
+                <div class="progress-step-circle">1</div>
+                <div class="progress-step-label">Orchestration</div>
+            </div>
+            <div class="progress-step" data-step="2">
+                <div class="progress-step-circle">2</div>
+                <div class="progress-step-label">Environment</div>
+            </div>
+            <div class="progress-step" data-step="3">
+                <div class="progress-step-circle">3</div>
+                <div class="progress-step-label">Services</div>
+            </div>
+            <div class="progress-step" data-step="4">
+                <div class="progress-step-circle">4</div>
+                <div class="progress-step-label">Tasks</div>
+            </div>
+            <div class="progress-step" data-step="5">
+                <div class="progress-step-circle">5</div>
+                <div class="progress-step-label">Dependencies</div>
+            </div>
+            <div class="progress-step" data-step="6">
+                <div class="progress-step-circle">6</div>
+                <div class="progress-step-label">Fault Tolerance</div>
+            </div>
+        </div>
+
+        <div class="wizard-content">
+            <!-- Step 1: Orchestration -->
+            <div class="step active" id="step-1">
+                <h2 class="section-title">Orchestration Information</h2>
+                <div class="alert alert-info">
+                    Define the basic information for your orchestration
+                </div>
+                
+                <div class="form-group">
+                    <label for="orch-name">Name *</label>
+                    <input type="text" id="orch-name" placeholder="e.g. satellite_mission_control" required pattern="[a-zA-Z][a-zA-Z0-9_-]*" title="Must start with a letter and contain only letters, numbers, underscores, and hyphens">
+                    <div class="help-text">Unique identifier for the orchestration</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="orch-version">Version *</label>
+                        <input type="text" id="orch-version" placeholder="e.g. 1.0.0" required pattern="\d+\.\d+\.\d+" title="Must follow semantic versioning (e.g., 1.0.0)">
+                    </div>
+                    <div class="form-group">
+                        <label for="orch-description">Description</label>
+                        <input type="text" id="orch-description" placeholder="Brief description">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Environment -->
+            <div class="step" id="step-2">
+                <h2 class="section-title">Environment Configuration</h2>
+                <div class="alert alert-info">
+                    Define the execution environment constraints
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Time Horizon</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="env-time-start">Start (ms)</label>
+                        <input type="number" id="env-time-start" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="env-time-end">End (ms)</label>
+                        <input type="number" id="env-time-end" value="1000" min="1">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Resources</h3>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="env-cpu-cores">CPU Cores</label>
+                        <input type="number" id="env-cpu-cores" value="4" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="env-memory-max">Memory Max (MB)</label>
+                        <input type="number" id="env-memory-max" value="8192" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="env-bandwidth-max">Bandwidth Max (Mbps)</label>
+                        <input type="number" id="env-bandwidth-max" value="100" min="1">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Real-Time</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="env-rt-kernel">Kernel</label>
+                        <input type="text" id="env-rt-kernel" value="PREEMPT_RT">
+                    </div>
+                    <div class="form-group">
+                        <label for="env-rt-tick">Tick Resolution</label>
+                        <select id="env-rt-tick">
+                            <option value="us">Microseconds (us)</option>
+                            <option value="ms">Milliseconds (ms)</option>
+                            <option value="cycles">Cycles</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="env-rt-period">RT Period (us)</label>
+                        <input type="number" id="env-rt-period" value="1000000" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="env-rt-runtime">RT Runtime (us)</label>
+                        <input type="number" id="env-rt-runtime" value="950000" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Services -->
+            <div class="step" id="step-3">
+                <h2 class="section-title">Service Definitions</h2>
+                <div class="alert alert-info">
+                    Add the containerized services that will execute the tasks
+                </div>
+
+                <div id="services-list"></div>
+                <button class="add-btn" onclick="addService()">+ Add Service</button>
+            </div>
+
+            <!-- Step 4: Tasks -->
+            <div class="step" id="step-4">
+                <h2 class="section-title">Task Definitions</h2>
+                <div class="alert alert-info">
+                    Define tasks with their real-time properties
+                </div>
+
+                <div id="tasks-list"></div>
+                <button class="add-btn" onclick="addTask()">+ Add Task</button>
+            </div>
+
+            <!-- Step 5: Dependencies -->
+            <div class="step" id="step-5">
+                <h2 class="section-title">Dependencies and Precedence</h2>
+                <div class="alert alert-info">
+                    Define precedence relationships between tasks
+                </div>
+
+                <div id="dependencies-list"></div>
+                <button class="add-btn" onclick="addDependency()">+ Add Dependency</button>
+            </div>
+
+            <!-- Step 6: Fault Tolerance -->
+            <div class="step" id="step-6">
+                <h2 class="section-title">Fault Tolerance</h2>
+                <div class="alert alert-info">
+                    Configure error management policies
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Recovery - Task Failure</h3>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="ft-task-policy">Policy</label>
+                        <select id="ft-task-policy">
+                            <option value="restart">Restart</option>
+                            <option value="skip">Skip</option>
+                            <option value="failover">Failover</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ft-task-retries">Max Retries</label>
+                        <input type="number" id="ft-task-retries" value="3" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="ft-task-backoff">Backoff</label>
+                        <select id="ft-task-backoff">
+                            <option value="exponential">Exponential</option>
+                            <option value="linear">Linear</option>
+                            <option value="constant">Constant</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Recovery - Service Failure</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ft-service-policy">Policy</label>
+                        <select id="ft-service-policy">
+                            <option value="replace">Replace</option>
+                            <option value="restart">Restart</option>
+                            <option value="ignore">Ignore</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ft-service-timeout">Timeout (ms)</label>
+                        <input type="number" id="ft-service-timeout" value="1000" min="1">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Recovery - System Failure</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ft-system-policy">Policy</label>
+                        <select id="ft-system-policy">
+                            <option value="reboot">Reboot</option>
+                            <option value="shutdown">Shutdown</option>
+                            <option value="safe_mode">Safe Mode</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ft-system-checkpoint">Checkpoint Interval (ms)</label>
+                        <input type="number" id="ft-system-checkpoint" value="5000" min="1">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Redundancy</h3>
+                <div class="form-group">
+                    <label for="ft-critical-tasks">Critical Tasks (comma separated IDs)</label>
+                    <input type="text" id="ft-critical-tasks" placeholder="e.g. task_init_comm, task_critical">
+                    <div class="help-text">Enter critical task IDs separated by commas</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ft-strategy">Strategy</label>
+                        <select id="ft-strategy">
+                            <option value="active">Active</option>
+                            <option value="passive">Passive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ft-replicas">Replicas</label>
+                        <input type="number" id="ft-replicas" value="2" min="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" id="prev-btn" onclick="prevStep()" style="display: none;">← Back</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="resetWizard()">Reset</button>
+                    <button class="btn btn-primary" id="next-btn" onclick="nextStep()">Next →</button>
+                    <button class="btn btn-success" id="finish-btn" onclick="finishWizard()" style="display: none;">✓ Complete & Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Creation Modal -->
+    <div id="serviceModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <span class="close" onclick="closeServiceModal()">&times;</span>
+                <h2>📦 Add New Service</h2>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <h3 style="font-size: 16px; margin-bottom: 15px; color: #667eea;">Basic Information</h3>
+                <div class="form-group">
+                    <label for="modal-service-id">Service ID *</label>
+                    <input type="text" id="modal-service-id" placeholder="e.g. telemetry_service" pattern="[a-zA-Z][a-zA-Z0-9_-]*">
+                    <div class="help-text">Must start with a letter</div>
+                </div>
+                <div class="form-group">
+                    <label for="modal-service-name">Name</label>
+                    <input type="text" id="modal-service-name" placeholder="e.g. Telemetry Handler">
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #667eea;">Container Configuration</h3>
+                <div class="form-group">
+                    <label for="modal-service-image">Container Image *</label>
+                    <input type="text" id="modal-service-image" placeholder="e.g. registry.sat/service:v1.0">
+                    <div class="help-text">Format: registry/name:tag</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal-service-runtime">Runtime</label>
+                        <select id="modal-service-runtime">
+                            <option value="docker">Docker</option>
+                            <option value="containerd">Containerd</option>
+                            <option value="podman">Podman</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-service-isolation">Isolation</label>
+                        <select id="modal-service-isolation">
+                            <option value="process">Process</option>
+                            <option value="hyperv">Hyper-V</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #667eea;">Resources</h3>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="modal-service-cpu-shares">CPU Shares</label>
+                        <input type="number" id="modal-service-cpu-shares" value="1024" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-service-memory">Memory Limit (MB)</label>
+                        <input type="number" id="modal-service-memory" value="512" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-service-affinity">CPU Affinity</label>
+                        <input type="text" id="modal-service-affinity" placeholder="e.g. 0,1">
+                        <div class="help-text">Comma separated core IDs</div>
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #667eea;">Capabilities & Health Check</h3>
+                <div class="form-group">
+                    <label for="modal-service-capabilities">Capabilities</label>
+                    <input type="text" id="modal-service-capabilities" placeholder="e.g. COMM_DOWNLINK, DATA_COMPRESSION">
+                    <div class="help-text">Comma separated capabilities</div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="modal-service-hc-interval">Health Check Interval (ms)</label>
+                        <input type="number" id="modal-service-hc-interval" value="100" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-service-hc-timeout">Timeout (ms)</label>
+                        <input type="number" id="modal-service-hc-timeout" value="50" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-service-hc-retries">Retries</label>
+                        <input type="number" id="modal-service-hc-retries" value="3" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeServiceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createServiceFromModal()">✓ Create Service</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Creation Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <span class="close" onclick="closeTaskModal()">&times;</span>
+                <h2>⚙️ Add New Task</h2>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <h3 style="font-size: 16px; margin-bottom: 15px; color: #f5576c;">Basic Information</h3>
+                <div class="form-group">
+                    <label for="modal-task-id">Task ID *</label>
+                    <input type="text" id="modal-task-id" placeholder="e.g. task_collect_data" pattern="[a-zA-Z][a-zA-Z0-9_-]*">
+                    <div class="help-text">Must start with a letter</div>
+                </div>
+                <div class="form-group">
+                    <label for="modal-task-name">Name</label>
+                    <input type="text" id="modal-task-name" placeholder="e.g. Collect Sensor Data">
+                </div>
+                <div class="form-group">
+                    <label for="modal-task-service">Service *</label>
+                    <select id="modal-task-service">
+                        <option value="">Select service</option>
+                    </select>
+                    <div class="help-text">The service that will execute this task</div>
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #f5576c;">Real-Time Properties</h3>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="modal-task-policy">Scheduling Policy</label>
+                        <select id="modal-task-policy">
+                            <option value="SCHED_FIFO">SCHED_FIFO</option>
+                            <option value="SCHED_RR">SCHED_RR</option>
+                            <option value="SCHED_OTHER">SCHED_OTHER</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-priority">Priority (1-99)</label>
+                        <input type="number" id="modal-task-priority" value="90" min="1" max="99">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-deadline">Deadline (ms)</label>
+                        <input type="number" id="modal-task-deadline" value="100" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="modal-task-period">Period (ms)</label>
+                    <input type="number" id="modal-task-period" placeholder="Leave empty for aperiodic task" min="1">
+                    <div class="help-text">For periodic tasks only. Leave empty for aperiodic tasks</div>
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #f5576c;">Execution</h3>
+                <div class="form-group">
+                    <label for="modal-task-duration">Duration / WCET (ms)</label>
+                    <input type="number" id="modal-task-duration" value="50" min="1">
+                    <div class="help-text">Worst Case Execution Time</div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="modal-task-cpu">CPU Units</label>
+                        <input type="number" id="modal-task-cpu" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-memory">Memory (MB)</label>
+                        <input type="number" id="modal-task-memory" value="256" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-bandwidth">Bandwidth (Mbps)</label>
+                        <input type="number" id="modal-task-bandwidth" value="10" min="1">
+                    </div>
+                </div>
+                
+                <h3 style="font-size: 16px; margin: 20px 0 15px; color: #f5576c;">Constraints</h3>
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label for="modal-task-concurrent">Max Concurrent</label>
+                        <input type="number" id="modal-task-concurrent" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-repetitions">Repetitions</label>
+                        <input type="number" id="modal-task-repetitions" value="1" min="0">
+                        <div class="help-text">0 = infinite</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-task-rep-delay">Repetition Delay (ms)</label>
+                        <input type="number" id="modal-task-rep-delay" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createTaskFromModal()">✓ Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='wizard.js') }}"></script>
+</body>
+</html>
