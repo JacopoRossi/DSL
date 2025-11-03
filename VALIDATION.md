@@ -105,6 +105,7 @@ return jsonify({'success': True, 'message': 'Step saved successfully'})
 | Priority | 1-99 | `95` |
 | Positive Number | > 0 | `1024` |
 | Non-negative | >= 0 | `0` |
+| Dependency Type | `start` or `finish` | `start` |
 
 ## HTML5 Validation Attributes
 

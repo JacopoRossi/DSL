@@ -381,14 +381,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 DSL Microservices</h1>
+            <h1>🚀 Service-Oriented Aerospace DSL</h1>
             <p>Create your configuration step by step</p>
         </div>
 
         <div class="progress-bar">
             <div class="progress-step active" data-step="1">
                 <div class="progress-step-circle">1</div>
-                <div class="progress-step-label">Orchestration</div>
+                <div class="progress-step-label">Global</div>
             </div>
             <div class="progress-step" data-step="2">
                 <div class="progress-step-circle">2</div>
@@ -413,17 +413,17 @@
         </div>
 
         <div class="wizard-content">
-            <!-- Step 1: Orchestration -->
+            <!-- Step 1: Global -->
             <div class="step active" id="step-1">
-                <h2 class="section-title">Orchestration Information</h2>
+                <h2 class="section-title">Global Information</h2>
                 <div class="alert alert-info">
-                    Define the basic information for your orchestration
+                    Define the basic information for your global configuration
                 </div>
                 
                 <div class="form-group">
                     <label for="orch-name">Name *</label>
                     <input type="text" id="orch-name" placeholder="e.g. satellite_mission_control" required pattern="[a-zA-Z][a-zA-Z0-9_-]*" title="Must start with a letter and contain only letters, numbers, underscores, and hyphens">
-                    <div class="help-text">Unique identifier for the orchestration</div>
+                    <div class="help-text">Unique identifier for the global configuration</div>
                 </div>
 
                 <div class="form-row">
@@ -458,7 +458,7 @@
                 </div>
 
                 <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Resources</h3>
-                <div class="form-row-3">
+                <div class="form-row">
                     <div class="form-group">
                         <label for="env-cpu-cores">CPU Cores</label>
                         <input type="number" id="env-cpu-cores" value="4" min="1">
@@ -466,10 +466,6 @@
                     <div class="form-group">
                         <label for="env-memory-max">Memory Max (MB)</label>
                         <input type="number" id="env-memory-max" value="8192" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="env-bandwidth-max">Bandwidth Max (Mbps)</label>
-                        <input type="number" id="env-bandwidth-max" value="100" min="1">
                     </div>
                 </div>
 
@@ -555,14 +551,6 @@
                         <label for="ft-task-retries">Max Retries</label>
                         <input type="number" id="ft-task-retries" value="3" min="0">
                     </div>
-                    <div class="form-group">
-                        <label for="ft-task-backoff">Backoff</label>
-                        <select id="ft-task-backoff">
-                            <option value="exponential">Exponential</option>
-                            <option value="linear">Linear</option>
-                            <option value="constant">Constant</option>
-                        </select>
-                    </div>
                 </div>
 
                 <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Recovery - Service Failure</h3>
@@ -594,26 +582,6 @@
                     <div class="form-group">
                         <label for="ft-system-checkpoint">Checkpoint Interval (ms)</label>
                         <input type="number" id="ft-system-checkpoint" value="5000" min="1">
-                    </div>
-                </div>
-
-                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 16px;">Redundancy</h3>
-                <div class="form-group">
-                    <label for="ft-critical-tasks">Critical Tasks (comma separated IDs)</label>
-                    <input type="text" id="ft-critical-tasks" placeholder="e.g. task_init_comm, task_critical">
-                    <div class="help-text">Enter critical task IDs separated by commas</div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="ft-strategy">Strategy</label>
-                        <select id="ft-strategy">
-                            <option value="active">Active</option>
-                            <option value="passive">Passive</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="ft-replicas">Replicas</label>
-                        <input type="number" id="ft-replicas" value="2" min="1">
                     </div>
                 </div>
             </div>
@@ -655,30 +623,17 @@
                     <input type="text" id="modal-service-image" placeholder="e.g. registry.sat/service:v1.0">
                     <div class="help-text">Format: registry/name:tag</div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="modal-service-runtime">Runtime</label>
-                        <select id="modal-service-runtime">
-                            <option value="docker">Docker</option>
-                            <option value="containerd">Containerd</option>
-                            <option value="podman">Podman</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal-service-isolation">Isolation</label>
-                        <select id="modal-service-isolation">
-                            <option value="process">Process</option>
-                            <option value="hyperv">Hyper-V</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="modal-service-runtime">Runtime</label>
+                    <select id="modal-service-runtime">
+                        <option value="docker">Docker</option>
+                        <option value="containerd">Containerd</option>
+                        <option value="podman">Podman</option>
+                    </select>
                 </div>
                 
                 <h3 style="font-size: 16px; margin: 20px 0 15px; color: #667eea;">Resources</h3>
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label for="modal-service-cpu-shares">CPU Shares</label>
-                        <input type="number" id="modal-service-cpu-shares" value="1024" min="1">
-                    </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label for="modal-service-memory">Memory Limit (MB)</label>
                         <input type="number" id="modal-service-memory" value="512" min="1">
@@ -775,7 +730,7 @@
                     <input type="number" id="modal-task-duration" value="50" min="1">
                     <div class="help-text">Worst Case Execution Time</div>
                 </div>
-                <div class="form-row-3">
+                <div class="form-row">
                     <div class="form-group">
                         <label for="modal-task-cpu">CPU Units</label>
                         <input type="number" id="modal-task-cpu" value="1" min="1">
@@ -783,10 +738,6 @@
                     <div class="form-group">
                         <label for="modal-task-memory">Memory (MB)</label>
                         <input type="number" id="modal-task-memory" value="256" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label for="modal-task-bandwidth">Bandwidth (Mbps)</label>
-                        <input type="number" id="modal-task-bandwidth" value="10" min="1">
                     </div>
                 </div>
                 
@@ -799,7 +750,6 @@
                     <div class="form-group">
                         <label for="modal-task-repetitions">Repetitions</label>
                         <input type="number" id="modal-task-repetitions" value="1" min="0">
-                        <div class="help-text">0 = infinite</div>
                     </div>
                     <div class="form-group">
                         <label for="modal-task-rep-delay">Repetition Delay (ms)</label>

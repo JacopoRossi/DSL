@@ -55,8 +55,8 @@ def validate_image_name(value):
         return False, "Container image must follow format: registry/name:tag"
     return True, ""
 
-def validate_orchestration(data):
-    """Validate orchestration step data"""
+def validate_global(data):
+    """Validate global step data"""
     errors = []
     
     if 'name' in data:
@@ -94,7 +94,7 @@ def validate_environment(data):
     
     if 'resources' in data:
         res = data['resources']
-        for field in ['cpu_cores', 'memory_max', 'bandwidth_max']:
+        for field in ['cpu_cores', 'memory_max']:
             if field in res:
                 valid, msg = validate_positive_number(res[field], field.replace('_', ' ').title())
                 if not valid:
@@ -180,6 +180,8 @@ def validate_dependencies(data):
     if not isinstance(precedence, list):
         return ["Precedence must be a list"]
     
+    valid_types = ['start', 'finish']
+    
     for idx, dep in enumerate(precedence):
         prefix = f"Dependency {idx + 1}: "
         
@@ -189,6 +191,8 @@ def validate_dependencies(data):
             errors.append(prefix + "'To' task is required")
         if 'from' in dep and 'to' in dep and dep['from'] == dep['to']:
             errors.append(prefix + "'From' and 'To' tasks cannot be the same")
+        if 'type' in dep and dep['type'] not in valid_types:
+            errors.append(prefix + f"Type must be one of: {', '.join(valid_types)}")
     
     return errors
 
@@ -202,13 +206,6 @@ def validate_fault_tolerance(data):
             valid, msg = validate_positive_number(recovery['task_failure']['max_retries'], 'Max retries')
             if not valid:
                 errors.append(msg)
-    
-    if 'redundancy' in data and 'replicas' in data['redundancy']:
-        valid, msg = validate_positive_number(data['redundancy']['replicas'], 'Replicas')
-        if not valid:
-            errors.append(msg)
-        elif data['redundancy']['replicas'] < 1:
-            errors.append("Replicas must be at least 1")
     
     return errors
 
@@ -227,16 +224,16 @@ def save_step():
     
     # Validate data based on step
     errors = []
-    if step == 'orchestration':
-        errors = validate_orchestration(step_data)
+    if step == 'global':
+        errors = validate_global(step_data)
         if not errors:
-            dsl_config['orchestration'] = step_data
+            dsl_config['global'] = step_data
     elif step == 'environment':
         errors = validate_environment(step_data)
         if not errors:
-            if 'orchestration' not in dsl_config:
-                dsl_config['orchestration'] = {}
-            dsl_config['orchestration']['environment'] = step_data
+            if 'global' not in dsl_config:
+                dsl_config['global'] = {}
+            dsl_config['global']['environment'] = step_data
     elif step == 'services':
         errors = validate_services(step_data)
         if not errors:
@@ -270,7 +267,7 @@ def download():
     global dsl_config
     
     # Add comment header
-    yaml_content = "# Real-Time Orchestration Definition Language (RTOD)\n"
+    yaml_content = "# Real-Time Global Definition Language (RTGD)\n"
     yaml_content += "# Version: 1.0\n"
     yaml_content += f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
     
@@ -286,7 +283,7 @@ def download():
         bytes_io,
         mimetype='text/yaml',
         as_attachment=True,
-        download_name='orchestration.yaml'
+        download_name='global.yaml'
     )
 
 @app.route('/api/reset', methods=['POST'])

@@ -28,7 +28,6 @@ services:
     container:
       image: "registry.sat/telemetry:v2.3"
       runtime: "docker"
-      isolation: "process"
       resources:
         cpu_shares: 1024
         memory_limit: 512  # MB
@@ -46,7 +45,6 @@ services:
     container:
       image: "registry.sat/payload:v1.1"
       runtime: "docker"
-      isolation: "process"
       resources:
         cpu_shares: 2048
         memory_limit: 1024
@@ -70,7 +68,7 @@ tasks:
         bandwidth: 10       # Mbps
     constraints:
       max_concurrent: 1      # Max concurrent executions
-      repetitions: 1         # Number of repetitions (0 = infinite)
+      repetitions: 1         # Number of repetitions
       repetition_delay: 0    # Min delay between repetitions
     
   - id: task_collect_data
@@ -125,13 +123,13 @@ dependencies:
   precedence:
     - from: task_init_comm
       to: task_collect_data
-      type: "starts"        # starts, meets, overlaps, before
+      type: "start"         # start, finish
       delay: 10             # Time units delay
       wait_all: false       # Wait for all repetitions
       
     - from: task_collect_data
       to: task_process_data
-      type: "meets"         # Immediately after
+      type: "finish"        # Immediately after
       delay: 0
       wait_all: true        # Wait for all repetitions of 'from' task
       
@@ -142,14 +140,9 @@ fault_tolerance:
     task_failure:
       policy: "restart"     # restart, skip, failover
       max_retries: 3
-      backoff: "exponential"
     service_failure:
       policy: "replace"
       timeout: 1000
     system_failure:
       policy: "reboot"
       checkpoint_interval: 5000
-  redundancy:
-    critical_tasks: [task_init_comm]
-    strategy: "active"     # active, passive
-    replicas: 2

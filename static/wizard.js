@@ -15,23 +15,7 @@ const PATTERNS = {
 document.addEventListener('DOMContentLoaded', function() {
     updateNavigationButtons();
     setupRealTimeValidation();
-    setupModalClosing();
 });
-
-// Setup modal closing on outside click
-function setupModalClosing() {
-    window.onclick = function(event) {
-        const serviceModal = document.getElementById('serviceModal');
-        const taskModal = document.getElementById('taskModal');
-        
-        if (event.target === serviceModal) {
-            closeServiceModal();
-        }
-        if (event.target === taskModal) {
-            closeTaskModal();
-        }
-    };
-}
 
 // Setup real-time validation on input fields
 function setupRealTimeValidation() {
@@ -157,7 +141,7 @@ function validateCurrentStep() {
     const errors = [];
     
     switch(currentStep) {
-        case 1: // Orchestration
+        case 1: // Global
             const name = document.getElementById('orch-name').value.trim();
             const version = document.getElementById('orch-version').value.trim();
             
@@ -184,11 +168,9 @@ function validateCurrentStep() {
             
             const cpuCores = parseInt(document.getElementById('env-cpu-cores').value);
             const memoryMax = parseInt(document.getElementById('env-memory-max').value);
-            const bandwidthMax = parseInt(document.getElementById('env-bandwidth-max').value);
             
             if (cpuCores <= 0) errors.push('CPU cores must be positive');
             if (memoryMax <= 0) errors.push('Memory max must be positive');
-            if (bandwidthMax <= 0) errors.push('Bandwidth max must be positive');
             break;
             
         case 3: // Services
@@ -269,10 +251,8 @@ function validateCurrentStep() {
             
         case 6: // Fault Tolerance
             const maxRetries = parseInt(document.getElementById('ft-task-retries').value);
-            const replicas = parseInt(document.getElementById('ft-replicas').value);
             
             if (maxRetries < 0) errors.push('Max retries must be positive');
-            if (replicas < 1) errors.push('Replicas must be at least 1');
             break;
     }
     
@@ -334,7 +314,7 @@ function saveCurrentStep() {
                 version: document.getElementById('orch-version').value,
                 description: document.getElementById('orch-description').value
             };
-            saveStep('orchestration', data);
+            saveStep('global', data);
             break;
             
         case 2:
@@ -345,8 +325,7 @@ function saveCurrentStep() {
                 },
                 resources: {
                     cpu_cores: parseInt(document.getElementById('env-cpu-cores').value),
-                    memory_max: parseInt(document.getElementById('env-memory-max').value),
-                    bandwidth_max: parseInt(document.getElementById('env-bandwidth-max').value)
+                    memory_max: parseInt(document.getElementById('env-memory-max').value)
                 },
                 real_time: {
                     kernel: document.getElementById('env-rt-kernel').value,
@@ -374,15 +353,11 @@ function saveCurrentStep() {
             break;
             
         case 6:
-            const criticalTasksStr = document.getElementById('ft-critical-tasks').value;
-            const criticalTasks = criticalTasksStr ? criticalTasksStr.split(',').map(t => t.trim()) : [];
-            
             data = {
                 recovery: {
                     task_failure: {
                         policy: document.getElementById('ft-task-policy').value,
-                        max_retries: parseInt(document.getElementById('ft-task-retries').value),
-                        backoff: document.getElementById('ft-task-backoff').value
+                        max_retries: parseInt(document.getElementById('ft-task-retries').value)
                     },
                     service_failure: {
                         policy: document.getElementById('ft-service-policy').value,
@@ -392,11 +367,6 @@ function saveCurrentStep() {
                         policy: document.getElementById('ft-system-policy').value,
                         checkpoint_interval: parseInt(document.getElementById('ft-system-checkpoint').value)
                     }
-                },
-                redundancy: {
-                    critical_tasks: criticalTasks,
-                    strategy: document.getElementById('ft-strategy').value,
-                    replicas: parseInt(document.getElementById('ft-replicas').value)
                 }
             };
             saveStep('fault_tolerance', data);
@@ -442,8 +412,6 @@ function openServiceModal() {
     document.getElementById('modal-service-name').value = '';
     document.getElementById('modal-service-image').value = '';
     document.getElementById('modal-service-runtime').value = 'docker';
-    document.getElementById('modal-service-isolation').value = 'process';
-    document.getElementById('modal-service-cpu-shares').value = 1024;
     document.getElementById('modal-service-memory').value = 512;
     document.getElementById('modal-service-affinity').value = '';
     document.getElementById('modal-service-capabilities').value = '';
@@ -463,8 +431,6 @@ function createServiceFromModal() {
     const serviceName = document.getElementById('modal-service-name').value.trim();
     const serviceImage = document.getElementById('modal-service-image').value.trim();
     const serviceRuntime = document.getElementById('modal-service-runtime').value;
-    const serviceIsolation = document.getElementById('modal-service-isolation').value;
-    const cpuShares = parseInt(document.getElementById('modal-service-cpu-shares').value);
     const memoryLimit = parseInt(document.getElementById('modal-service-memory').value);
     const cpuAffinity = document.getElementById('modal-service-affinity').value.trim();
     const capabilities = document.getElementById('modal-service-capabilities').value.trim();
@@ -512,9 +478,7 @@ function createServiceFromModal() {
         container: {
             image: serviceImage,
             runtime: serviceRuntime,
-            isolation: serviceIsolation,
             resources: {
-                cpu_shares: cpuShares,
                 memory_limit: memoryLimit,
                 cpu_affinity: affinityArray
             }
@@ -557,7 +521,7 @@ function renderServices() {
                             ${service.name || 'No name set'} • ${service.container.image || 'No image'}
                         </div>
                         <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">
-                            📊 CPU: ${service.container.resources.cpu_shares} shares • 💾 RAM: ${service.container.resources.memory_limit}MB • 🐳 ${service.container.runtime}
+                            💾 RAM: ${service.container.resources.memory_limit}MB • 🐳 ${service.container.runtime}
                         </div>
                     </div>
                     <div style="font-size: 20px;" id="service-toggle-${index}">▼</div>
@@ -592,11 +556,7 @@ function renderServices() {
                         </select>
                     </div>
                 </div>
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label>CPU Shares</label>
-                        <input type="number" value="${service.container.resources.cpu_shares}" onchange="updateServiceResource(${index}, 'cpu_shares', parseInt(this.value)); renderServices();">
-                    </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label>Memory Limit (MB)</label>
                         <input type="number" value="${service.container.resources.memory_limit}" onchange="updateServiceResource(${index}, 'memory_limit', parseInt(this.value)); renderServices();">
@@ -667,7 +627,6 @@ function openTaskModal() {
     document.getElementById('modal-task-duration').value = 50;
     document.getElementById('modal-task-cpu').value = 1;
     document.getElementById('modal-task-memory').value = 256;
-    document.getElementById('modal-task-bandwidth').value = 10;
     document.getElementById('modal-task-concurrent').value = 1;
     document.getElementById('modal-task-repetitions').value = 1;
     document.getElementById('modal-task-rep-delay').value = 0;
@@ -702,7 +661,6 @@ function createTaskFromModal() {
     const taskDuration = parseInt(document.getElementById('modal-task-duration').value);
     const taskCpu = parseInt(document.getElementById('modal-task-cpu').value);
     const taskMemory = parseInt(document.getElementById('modal-task-memory').value);
-    const taskBandwidth = parseInt(document.getElementById('modal-task-bandwidth').value);
     const taskConcurrent = parseInt(document.getElementById('modal-task-concurrent').value);
     const taskRepetitions = parseInt(document.getElementById('modal-task-repetitions').value);
     const taskRepDelay = parseInt(document.getElementById('modal-task-rep-delay').value);
@@ -754,8 +712,7 @@ function createTaskFromModal() {
             duration: taskDuration,
             resource_usage: {
                 cpu: taskCpu,
-                memory: taskMemory,
-                bandwidth: taskBandwidth
+                memory: taskMemory
             }
         },
         constraints: {
@@ -812,7 +769,7 @@ function renderTasks() {
                             <span>⚡ WCET: ${task.execution.duration}ms</span>
                         </div>
                         <div style="font-size: 11px; opacity: 0.75; margin-top: 3px;">
-                            📊 CPU: ${task.execution.resource_usage.cpu} • 💾 RAM: ${task.execution.resource_usage.memory}MB • 🌐 BW: ${task.execution.resource_usage.bandwidth}Mbps
+                            📊 CPU: ${task.execution.resource_usage.cpu} • 💾 RAM: ${task.execution.resource_usage.memory}MB
                         </div>
                     </div>
                     <div style="font-size: 20px;" id="task-toggle-${index}">▼</div>
@@ -869,7 +826,7 @@ function renderTasks() {
                         <input type="number" value="${task.execution.duration}" onchange="updateTaskExec(${index}, 'duration', parseInt(this.value)); renderTasks();">
                     </div>
                 </div>
-                <div class="form-row-3">
+                <div class="form-row">
                     <div class="form-group">
                         <label>CPU</label>
                         <input type="number" value="${task.execution.resource_usage.cpu}" onchange="updateTaskResource(${index}, 'cpu', parseInt(this.value)); renderTasks();">
@@ -877,10 +834,6 @@ function renderTasks() {
                     <div class="form-group">
                         <label>Memory (MB)</label>
                         <input type="number" value="${task.execution.resource_usage.memory}" onchange="updateTaskResource(${index}, 'memory', parseInt(this.value)); renderTasks();">
-                    </div>
-                    <div class="form-group">
-                        <label>Bandwidth (Mbps)</label>
-                        <input type="number" value="${task.execution.resource_usage.bandwidth}" onchange="updateTaskResource(${index}, 'bandwidth', parseInt(this.value)); renderTasks();">
                     </div>
                 </div>
                 <h4 style="margin-top: 15px; margin-bottom: 10px; font-size: 14px; font-weight: 600;">Constraints</h4>
@@ -942,7 +895,7 @@ function addDependency() {
     const dependency = {
         from: '',
         to: '',
-        type: 'starts',
+        type: 'start',
         delay: 0,
         wait_all: false
     };
@@ -990,10 +943,8 @@ function renderDependencies() {
                 <div class="form-group">
                     <label>Type</label>
                     <select onchange="updateDependency(${index}, 'type', this.value)">
-                        <option value="starts" ${dep.type === 'starts' ? 'selected' : ''}>Starts</option>
-                        <option value="meets" ${dep.type === 'meets' ? 'selected' : ''}>Meets</option>
-                        <option value="overlaps" ${dep.type === 'overlaps' ? 'selected' : ''}>Overlaps</option>
-                        <option value="before" ${dep.type === 'before' ? 'selected' : ''}>Before</option>
+                        <option value="start" ${dep.type === 'start' ? 'selected' : ''}>Start</option>
+                        <option value="finish" ${dep.type === 'finish' ? 'selected' : ''}>Finish</option>
                     </select>
                 </div>
                 <div class="form-group">
