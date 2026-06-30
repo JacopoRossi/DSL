@@ -1,3 +1,4 @@
+const API_BASE = window.API_BASE || '';
 let currentStep = 1;
 const totalSteps = 6;
 let services = [];
@@ -375,7 +376,7 @@ function saveCurrentStep() {
 }
 
 function saveStep(step, data) {
-    return fetch('/api/save_step', {
+    return fetch(`${API_BASE}/api/save_step`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -979,7 +980,7 @@ function finishWizard() {
     
     // Wait a bit for the save to complete, then download
     setTimeout(() => {
-        window.location.href = '/api/download';
+        window.location.href = `${API_BASE}/api/download`;
         
         // Show success message
         alert('✓ Configuration completed! The YAML file has been downloaded.');
@@ -988,7 +989,7 @@ function finishWizard() {
 
 function resetWizard() {
     if (confirm('Are you sure you want to reset the entire configuration?')) {
-        fetch('/api/reset', {
+        fetch(`${API_BASE}/api/reset`, {
             method: 'POST'
         }).then(() => {
             location.reload();

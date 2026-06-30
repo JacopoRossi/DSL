@@ -380,8 +380,9 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Service-Oriented Aerospace DSL</h1>
+        <div class="header" style="position: relative;">
+            <a href="/" style="position:absolute;left:20px;top:20px;color:white;text-decoration:none;font-size:13px;opacity:0.9;">← Versions</a>
+            <h1>Service-Oriented DSL </span></h1>
             <p>Create your configuration step by step</p>
         </div>
 
@@ -764,6 +765,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='wizard.js') }}"></script>
+    <script>window.API_BASE = "/v2";</script>
+    <script src="{{ url_for('v2.static', filename='wizard.js') }}"></script>
 </body>
 </html>
